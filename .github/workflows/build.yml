@@ -9,12 +9,12 @@ jobs:
   build:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Test pure logic
         run: swift test
       - name: Build universal app bundle
         run: bash scripts/build.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: MuteAlert-mac-development
           path: dist/MuteAlert-mac-universal.zip
