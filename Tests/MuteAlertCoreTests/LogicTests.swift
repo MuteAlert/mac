@@ -22,7 +22,20 @@ final class LogicTests: XCTestCase {
         var report = [UInt8](repeating: 0, count: 64)
         report[0] = 6; report[1] = 0xB0; report[15] = 8; report[9] = 1
         XCTAssertEqual(SteelSeriesState.muted(report: report), true)
+        XCTAssertEqual(SteelSeriesState.parse(report: report), .init(online: true, muted: true))
+        report[15] = 0
+        XCTAssertNil(SteelSeriesState.muted(report: report))
+        XCTAssertEqual(SteelSeriesState.parse(report: report), .init(online: false, muted: true))
         report[9] = 2
         XCTAssertNil(SteelSeriesState.muted(report: report))
+    }
+    func testLatchedMuteReconciliationIsOneShotAcrossReconnects() {
+        var state = LatchedMuteReconciler()
+        XCTAssertEqual(state.observe(false), false)
+        XCTAssertNil(state.observe(false))
+        XCTAssertEqual(state.observe(true), true)
+        XCTAssertNil(state.observe(nil))
+        XCTAssertNil(state.observe(false))
+        XCTAssertEqual(state.observe(true), true)
     }
 }

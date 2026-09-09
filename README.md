@@ -18,14 +18,16 @@ real microphone devices, headset buttons and live calls still need testing on a 
 | Google Meet | Opt-in foreground-browser window only, with title, leave-call and unique microphone-button checks |
 | Speaking-while-muted warning and audio cue | Local threshold/delay detector, notification and optional sound |
 | Standard HID headset controls | Non-exclusive telephony/system-control mute button events; physical latched state unknown |
-| Vendor headset protocols | Adapter interface present; Windows SteelSeries report decoder retained and tested, macOS transport **not implemented** |
+| Vendor headset protocols | SteelSeries Nova Pro Wireless USB receiver transport implemented for PIDs `12E0`, `12E5`, and `225D`; other vendor adapter slots remain unsupported |
 | Diagnostics | VID/PID, parsed HID element descriptor fields and sanitized mute-button changes |
 | GitHub update checks | Optional daily checks and manual release download; **no automatic installer** |
 | Launch at login | macOS SMAppService login item |
 
 Core Audio mute can reflect a driver/hardware change, but does not establish whether a physical switch caused it.
 Silence is never interpreted as physical mute. Generic HID synchronization is opt-in and best-effort:
-not all headsets expose buttons, and vendor protocols require device-specific work.
+not all headsets expose buttons, and vendor protocols require device-specific work. The SteelSeries provider
+uses a non-exclusive IOKit HID connection and accepts mute only from a strictly validated receiver report;
+it never infers mute from silence. Its macOS hardware behavior is experimental pending broader physical-device testing.
 It does not provide universal bidirectional physical-switch synchronization.
 
 ## Controls

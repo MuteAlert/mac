@@ -53,12 +53,35 @@ public struct Version: Comparable {
     }
 }
 
-// Protocol payload parser retained from the Windows provider. Transport must
-// be validated on macOS before this is connected to device polling.
 public enum SteelSeriesState {
-    public static func muted(report: [UInt8]) -> Bool? {
+    public struct Observation: Equatable {
+        public let online: Bool
+        public let muted: Bool
+    }
+    public static func parse(report: [UInt8]) -> Observation? {
         guard report.count >= 16, report[0] == 0x06, report[1] == 0xB0,
-              report[15] == 0x08, report[9] <= 1 else { return nil }
-        return report[9] == 1
+              report[9] <= 1 else { return nil }
+        return Observation(online: report[15] == 0x08, muted: report[9] == 1)
+    }
+    public static func muted(report: [UInt8]) -> Bool? {
+        guard let observation = parse(report: report), observation.online else { return nil }
+        return observation.muted
+    }
+}
+
+public struct LatchedMuteReconciler {
+    private var initialPending = true
+    private var known = false
+    private var previous = false
+
+    public init() {}
+
+    public mutating func observe(_ muted: Bool?) -> Bool? {
+        guard let muted else {
+            known = false
+            return nil
+        }
+        defer { known = true; previous = muted; initialPending = false }
+        return initialPending || (known && previous != muted) ? muted : nil
     }
 }

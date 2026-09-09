@@ -22,10 +22,13 @@ final class Model: ObservableObject {
     private var gates: [String: SpeechGate] = [:]
     private var lastHID = Date.distantPast
     private var checking = false
+    private var vendorReconciler = LatchedMuteReconciler()
+    private var pendingVendorInputState: Bool?
     var onRender: (() -> Void)?
     var chosenCall: ActiveCall? { activeCalls.first(where: { $0.muted }) ?? activeCalls.first }
     init() {
         headsets.onButton = { [weak self] in self?.headsetButton() }
+        headsets.onObservation = { [weak self] in self?.headsetObservation($0) }
         apply()
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in self?.tick() }
     }
@@ -39,6 +42,9 @@ final class Model: ObservableObject {
     func stop() { timer?.invalidate(); audio.enabled = false; audio.stop(); headsets.stop() }
     private func tick() {
         input = audio.snapshot()
+        if let target = pendingVendorInputState, input.muteWritable, input.muted != nil {
+            if input.muted == target || audio.setMuted(target) { pendingVendorInputState = nil }
+        }
         peak = min(1, max(0, audio.peak() * preferences.sensitivity))
         if !preferences.meterEnabled { peak = 0 }
         if preferences.lockVolume && input.volumeWritable && Date().timeIntervalSince(lastLock) > 1 {
@@ -116,6 +122,15 @@ final class Model: ObservableObject {
             if self.preferences.syncCalls, let beforeCall {
                 self.pollCalls(command: (beforeCall.id, !beforeCall.muted))
             }
+        }
+    }
+    private func headsetObservation(_ observation: HeadsetObservation) {
+        headsetStatus = "\(observation.method) · \(observation.confidence)\n\(observation.detail)"
+        guard preferences.headsetEnabled,
+              let target = vendorReconciler.observe(observation.muted) else { return }
+        if preferences.syncInput { pendingVendorInputState = target }
+        if preferences.syncCalls, let call = chosenCall, call.muted != target {
+            pollCalls(command: (call.id, target))
         }
     }
     func notificationsPermission() {

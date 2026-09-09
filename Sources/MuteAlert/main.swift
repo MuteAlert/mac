@@ -105,8 +105,8 @@ struct SettingsView: View {
                         Toggle("Synchronize system input", isOn: $model.preferences.syncInput)
                         Toggle("Synchronize active call", isOn: $model.preferences.syncCalls)
                         Text(model.headsetStatus)
-                        Text("Standard HID mute button: button events only; physical mute state remains unknown. Core Audio reports the OS mute state, not proof of a physical switch. Silence never implies physical mute.")
-                        Text("SteelSeries, Logitech, Jabra, Poly and Corsair vendor transports are not yet validated on macOS. Proprietary physical-state detection is unsupported.")
+                        Text("SteelSeries Nova Pro Wireless USB receivers are detected automatically using their vendor mute-state protocol. Standard HID mute buttons remain button events only; Core Audio reports OS mute, not proof of a physical switch. Silence never implies physical mute.")
+                        Text("The SteelSeries transport is experimental on macOS. Logitech, Jabra, Poly, Corsair, and other proprietary physical-state protocols remain unsupported.")
                         Text("If needed, grant Input Monitoring permission in System Settings → Privacy & Security, then Apply again.")
                         Button("Export sanitized headset diagnostics…") { model.exportDiagnostics() }
                     }.padding()
